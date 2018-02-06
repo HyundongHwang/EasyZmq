@@ -1,0 +1,7 @@
+//initRequest.json
+{
+  "command": "initRequest",
+  "data": {
+    "hello": "world",
+  }
+}
