@@ -26,7 +26,7 @@ static int s_nMyPort = 0;
 
 
 
-static LPCSTR RESPONSE_FAIL_CONNECTION_TIMEOUT = "{ \r\n \
+static LPCWSTR RESPONSE_FAIL_CONNECTION_TIMEOUT = L"{ \r\n \
     \"code\": \"FAIL_CONNECTION_TIMEOUT\", \r\n \
     \"desc\": \"실패 !!! 연결중 타임아웃이 발생하였습니다. !!!\" \r\n \
 }";
@@ -131,31 +131,21 @@ EASYZMQ_API int EASYZMQ_Init(
 
 
 
-EASYZMQ_API int EASYZMQ_Close(
-    LPSTR szResponse,
-    int nResponseLength)
-{
-    _CloseZmqContextSocketThread();
-    return 0;
-}
-
-
-
 EASYZMQ_API int EASYZMQ_Request(
-    LPCSTR szRequest,
-    LPSTR szResponse,
+    LPCWSTR wRequest,
+    LPWSTR wResponse,
     int nResponseLength,
     int nTimeout)
 {
-    int nResult = _EASYZMQ_Request(szRequest, szResponse, nResponseLength, nTimeout);
+    int nResult = _EASYZMQ_Request(wRequest, wResponse, nResponseLength, nTimeout);
     return nResult;
 }
 
 
 
 int _EASYZMQ_Request(
-    LPCSTR szRequest,
-    LPSTR szResponse,
+    LPCWSTR wRequest,
+    LPWSTR wResponse, 
     int nResponseLength,
     int nTimeout)
 {
@@ -165,23 +155,23 @@ int _EASYZMQ_Request(
 
 
 
-    char szPingRes[1024] = { 0, };
-    nResult = _RequestResponse("ping", szPingRes, 1024, 3000);
+    wchar_t wPingRes[1024] = { 0, };
+    nResult = _RequestResponse(L"ping", wPingRes, 1024, 3000);
 
-    if (strcmp(szPingRes, "pong") != 0)
+    if (::lstrcmp(wPingRes, L"pong") != 0)
     {
-        ::strcpy(szResponse, RESPONSE_FAIL_CONNECTION_TIMEOUT);
+        ::lstrcpy(wResponse, RESPONSE_FAIL_CONNECTION_TIMEOUT);
         nResult = _ResetReqSocket();
         return nResult;
     }
 
 
 
-    nResult = _RequestResponse(szRequest, szResponse, nResponseLength, nTimeout);
+    nResult = _RequestResponse(wRequest, wResponse, nResponseLength, nTimeout);
 
     if (nResult < 0)
     {
-        ::strcpy(szResponse, RESPONSE_FAIL_CONNECTION_TIMEOUT);
+        ::lstrcpy(wResponse, RESPONSE_FAIL_CONNECTION_TIMEOUT);
         nResult = _ResetReqSocket();
         return nResult;
     }
@@ -204,30 +194,30 @@ unsigned int WINAPI _ZmqRepThreadFunc(void* pParam)
     char szMyCon[1024] = { 0, };
     sprintf(szMyCon, "tcp://127.0.0.1:%d", s_nMyPort);
     nResult = zmq_bind(s_pSocketRep, szMyCon);
-    char szRecv[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    char szResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
+    wchar_t wRecv[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL / sizeof(wchar_t)] = { 0, };
+    wchar_t wResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL / sizeof(wchar_t)] = { 0, };
 
     while (true)
     {
-        ::ZeroMemory(szRecv, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
-        ::ZeroMemory(szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
-        nResult = zmq_recv(s_pSocketRep, szRecv, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 0);
-        ScaUtil::WriteLog(L"_ZmqRepThreadFunc strlen(szRecv) : %d \n", strlen(szRecv));
+        ::ZeroMemory(wRecv, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
+        ::ZeroMemory(wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
+        nResult = zmq_recv(s_pSocketRep, wRecv, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 0);
+        ScaUtil::WriteLog(L"_ZmqRepThreadFunc ::lstrlen(szRecv) : %d \n", ::lstrlen(wRecv));
 
-        if (::strcmp(szRecv, "ping") == 0)
+        if (::lstrcmp(wRecv, L"ping") == 0)
         {
-            ::strcpy(szResponse, "pong");
+            ::lstrcpy(wResponse, L"pong");
         }
         else
         {
             if (s_pFuncOnPush != NULL)
             {
-                s_pFuncOnPush(szRecv, szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
+                s_pFuncOnPush(wRecv, wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
             }
         }
 
-        ScaUtil::WriteLog(L"EASYZMQ_Init strlen(szResponse) : %d \n", strlen(szResponse));
-        nResult = zmq_send(s_pSocketRep, szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 0);
+        ScaUtil::WriteLog(L"EASYZMQ_Init ::lstrlen(szResponse) : %d \n", ::lstrlen(wResponse));
+        nResult = zmq_send(s_pSocketRep, wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 0);
     }
 
     return nResult;
@@ -342,34 +332,26 @@ unsigned int WINAPI _DownloadAndExecThreadFunc(void* pParam)
 
 
 
-int _RequestResponse(LPCSTR szRequest, LPSTR szResponse, int nResponseLength, int nTimeout)
+int _RequestResponse(LPCWSTR wRequest, LPWSTR wResponse, int nResponseLength, int nTimeout)
 {
     USES_CONVERSION;
 
     int nResult = 0;
-    //char szRequestHeaderBody[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    //const int HEADER_SIZE = 128;
-    //char szHeader[HEADER_SIZE + 1] = { 0, };
     int lengthReq = 0;
-
-    //sprintf(szHeader, "timeout=%d", nTimeout);
-    //memset(szRequestHeaderBody, ' ', HEADER_SIZE);
-    //memcpy(szRequestHeaderBody, szHeader, _GetValidByteCountFromCharPtr(szHeader) - 1);
-    //strcpy(szRequestHeaderBody + HEADER_SIZE, szRequest);
 
     //zmq 
     nResult = zmq_setsockopt(s_pSocketReq, ZMQ_RCVTIMEO, &nTimeout, sizeof(int));
 
-    lengthReq = _GetValidByteCountFromCharPtr((char*)szRequest);
+    lengthReq = (::lstrlen(wRequest) + 1) * sizeof(wchar_t);
 
-    ScaUtil::WriteLog(L"EASYZMQ_Request strlen(szRequestHeaderBody) : %d \n", strlen(szRequest));
+    ScaUtil::WriteLog(L"EASYZMQ_Request ::lstrlen(szRequestHeaderBody) : %d \n", ::lstrlen(wRequest));
 
-    nResult = zmq_send(s_pSocketReq, szRequest, lengthReq, 0);
+    nResult = zmq_send(s_pSocketReq, wRequest, lengthReq, 0);
     ScaUtil::WriteLog(L"EASYZMQ_Request zmq_send nResult : %d \n", nResult);
 
-    nResult = zmq_recv(s_pSocketReq, szResponse, nResponseLength, 0);
+    nResult = zmq_recv(s_pSocketReq, wResponse, nResponseLength, 0);
 
-    ScaUtil::WriteLog(L"EASYZMQ_Request strlen(szResponse) : %d \n", strlen(szResponse));
+    ScaUtil::WriteLog(L"EASYZMQ_Request ::lstrlen(szResponse) : %d \n", ::lstrlen(wResponse));
 
     return nResult;
 }

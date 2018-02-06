@@ -4,18 +4,17 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// 써드파티 클라에서 코코넛 클라의 전문을 콜백 수신받는 함수
+// EasyZmq 수신 콜백함수
 ////////////////////////////////////////////////////////////////////////////////
 typedef int(*LP_EASYZMQ_ONPUSH)(
-    LPCSTR szRequest,               // 콜백 수신전문
-    LPSTR szResponse,               // 콜백 응답전문
+    LPCWSTR wRequest,               // 콜백 수신전문
+    LPWSTR wResponse,               // 콜백 응답전문
     int nResponseLength);           // 콜백 응답전문의 길이
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// 코코넛 클라와 통신을 하기위한 초기화함수
-// 써드파티 클라에서 통신을 시작하기전 반드시 호출해야 한다.
+// EasyZmq 초기화함수
 ////////////////////////////////////////////////////////////////////////////////
 typedef int(*LP_EASYZMQ_INIT)(
     int nMyPort,                        // 내 대기 포트
@@ -24,27 +23,18 @@ typedef int(*LP_EASYZMQ_INIT)(
 
 
 
-typedef int(*LP_EASYZMQ_CLOSE)(
-    LPSTR szResponse,
-    int nResponseLength);
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
-// 써드파티 클라에서 코코넛 클라로 요청하는 함수
+// EasyZmq 요청함수
 ////////////////////////////////////////////////////////////////////////////////
 typedef int(*LP_EASYZMQ_REQUEST)(
-    LPCSTR szRequest,               // 요청전문
-    LPSTR szResponse,               // 응답전문
+    LPCWSTR wRequest,               // 요청전문
+    LPWSTR wResponse,               // 응답전문
     int nResponseLength,            // 응답전문의 길이
     int nTimeout);                  // 타임아웃 milli seconds
 
 
 
 static const int EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL = 300 * 1024;
-
-
-
 
 
 
@@ -86,13 +76,12 @@ public:
     static MainWnd* s_pCurrent;
 
 private:
-    static int _EASYZMQ_OnPush(LPCSTR szRequest, LPSTR szResponse, int nResponseLength);
-    static int _GetValidByteCountFromCharPtr(char* pSz);
+    static int _EASYZMQ_OnPush(LPCWSTR wRequest, LPWSTR wResponse, int nResponseLength);
 
     bool _LoadLibrary();
     void _UnloadLibrary();
-    void _WriteLog(LPCSTR szLog);
-    void _ReadFile(LPCWSTR wFileName, LPSTR szFileContent, int nFileContent);
+    void _WriteLog(LPCWSTR wLog);
+    void _ReadFile(LPCWSTR wFileName, LPWSTR wFileContent, int nFileContent);
     void _CallRequestApi(LPCWSTR wFileName, int nTimeout);
 
     LRESULT _On_WM_CREATE(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -102,7 +91,6 @@ private:
 
     static void _OnClickBtn_EASYZMQ_INIT(MainWnd* pThis);
     static void _OnClickBtn_EASYZMQ_REQUEST_hello(MainWnd* pThis);
-    static void _OnClickBtn_saleUploadRequest(MainWnd* pThis);
     static void _OnClickBtn_Clear(MainWnd* pThis);
 
     CWindow m_edLog;
@@ -110,7 +98,6 @@ private:
     HMODULE m_hDll;
 
     LP_EASYZMQ_INIT m_pFunc_EASYZMQ_INIT;
-    LP_EASYZMQ_CLOSE m_pFunc_EASYZMQ_CLOSE;
     LP_EASYZMQ_REQUEST m_pFunc_EASYZMQ_REQUEST;
 
     CAtlArray<CSTRING_FUNC_SIMPLE_PAIR> m_arrLabelFuncSimple;

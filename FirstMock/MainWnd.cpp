@@ -21,7 +21,6 @@ bool MainWnd::_LoadLibrary()
 {
     m_hDll = ::LoadLibrary(L"EasyZmq.dll");
     m_pFunc_EASYZMQ_INIT = (LP_EASYZMQ_INIT)GetProcAddress(m_hDll, "EASYZMQ_Init");
-    m_pFunc_EASYZMQ_CLOSE = (LP_EASYZMQ_CLOSE)GetProcAddress(m_hDll, "EASYZMQ_Close");
     m_pFunc_EASYZMQ_REQUEST = (LP_EASYZMQ_REQUEST)GetProcAddress(m_hDll, "EASYZMQ_Request");
 
     return true;
@@ -47,7 +46,6 @@ LRESULT MainWnd::_On_WM_CREATE(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 
     m_arrLabelFuncSimple.Add(CSTRING_FUNC_SIMPLE_PAIR(L"EASYZMQ_INIT", MainWnd::_OnClickBtn_EASYZMQ_INIT));
     m_arrLabelFuncSimple.Add(CSTRING_FUNC_SIMPLE_PAIR(L"EASYZMQ_REQUEST hello", MainWnd::_OnClickBtn_EASYZMQ_REQUEST_hello));
-    m_arrLabelFuncSimple.Add(CSTRING_FUNC_SIMPLE_PAIR(L"EASYZMQ_REQUEST saleUploadRequest", MainWnd::_OnClickBtn_saleUploadRequest));
     m_arrLabelFuncSimple.Add(CSTRING_FUNC_SIMPLE_PAIR(L"Clear", MainWnd::_OnClickBtn_Clear));
 
     for (auto i = 0; i < m_arrLabelFuncSimple.GetCount(); i++)
@@ -78,53 +76,35 @@ LRESULT MainWnd::_On_WM_SIZE(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
     return 0;
 }
 
-int MainWnd::_EASYZMQ_OnPush(LPCSTR szRequest, LPSTR szResponse, int nResponseLength)
+int MainWnd::_EASYZMQ_OnPush(LPCWSTR wRequest, LPWSTR wResponse, int nResponseLength)
 {
-    MainWnd::s_pCurrent->_WriteLog(CStringA("_EASYZMQ_OnPush RECV : ") + szRequest);
+    MainWnd::s_pCurrent->_WriteLog(CString(L"CALLBACK ME <- OTHER : ") + wRequest);
 
-    if (::strcmp(szRequest, "hello") == 0)
+    if (::lstrcmp(wRequest, L"hello¾È³ç") == 0)
     {
-        ::strcpy(szResponse, "world");
-    }
-    else if (::strcmp(szRequest, "¾È³ç") == 0)
-    {
-        ::strcpy(szResponse, "ÇÏ¼¼¿ä");
+        ::lstrcpy(wResponse, L"world¼¼°è");
     }
     else
     {
-        ::strcpy(szResponse, "unknown !!!");
+        ::lstrcpy(wResponse, L"unknown !!!");
     }
 
-    MainWnd::s_pCurrent->_WriteLog(CStringA("_EASYZMQ_OnPush RES : ") + szResponse);
+    MainWnd::s_pCurrent->_WriteLog(CString(L"CALLBACK ME -> OTHER : ") + wResponse);
     return 0;
 }
 
-int MainWnd::_GetValidByteCountFromCharPtr(char* pSz)
-{
-    byte* pBuf = (byte*)pSz;
-    int lengthStr = ::strlen(pSz);
-
-    for (auto i = 0; i < lengthStr * 3; i++)
-    {
-        if (pBuf[i] == '\0')
-            return i + 1;
-    }
-
-    return -1;
-}
-
-void MainWnd::_WriteLog(LPCSTR szLog)
+void MainWnd::_WriteLog(LPCWSTR wLog)
 {
     USES_CONVERSION;
 
     CString strEd;
     m_edLog.GetWindowText(strEd);
     strEd += L"\r\n";
-    strEd += A2T(szLog);
+    strEd += wLog;
     m_edLog.SetWindowText(strEd);
 }
 
-void MainWnd::_ReadFile(LPCWSTR wFileName, LPSTR szFileContent, int nFileContent)
+void MainWnd::_ReadFile(LPCWSTR wFileName, LPWSTR wFileContent, int nFileContent)
 {
     USES_CONVERSION;
     wchar_t wJsonFilePath[MAX_PATH] = { 0, };
@@ -133,18 +113,18 @@ void MainWnd::_ReadFile(LPCWSTR wFileName, LPSTR szFileContent, int nFileContent
     ::PathAppend(wJsonFilePath, wFileName);
     CAtlFile file;
     file.Create(wJsonFilePath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING);
-    file.Read(szFileContent, nFileContent);
+    file.Read(wFileContent, nFileContent);
     file.Close();
 }
 
 void MainWnd::_CallRequestApi(LPCWSTR wFileName, int nTimeout)
 {
-    char szContent[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    _ReadFile(wFileName, szContent, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
-    _WriteLog(CStringA("REQ : ") + szContent);
-    char szResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    m_pFunc_EASYZMQ_REQUEST(szContent, szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, nTimeout);
-    _WriteLog(CStringA("RES : ") + szResponse);
+    wchar_t wContent[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL / sizeof(wchar_t)] = { 0, };
+    _ReadFile(wFileName, wContent, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
+    _WriteLog(CString(L"REQ : ") + wContent);
+    wchar_t wResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL / sizeof(wchar_t)] = { 0, };
+    m_pFunc_EASYZMQ_REQUEST(wContent, wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, nTimeout);
+    _WriteLog(CString(L"RES : ") + wResponse);
 }
 
 LRESULT MainWnd::_On_ID_BTN(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
@@ -157,35 +137,19 @@ LRESULT MainWnd::_On_ID_BTN(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHan
 
 void MainWnd::_OnClickBtn_EASYZMQ_REQUEST_hello(MainWnd* pThis)
 {
-    {
-        char szResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-        pThis->m_pFunc_EASYZMQ_REQUEST("hello", szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 3000);
-        pThis->_WriteLog(CStringA("RES : ") + szResponse);
-    }
-
-    {
-        char szResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-        pThis->m_pFunc_EASYZMQ_REQUEST("¾È³ç", szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 3000);
-        pThis->_WriteLog(CStringA("RES : ") + szResponse);
-    }
+    wchar_t* wRequest = L"hello¾È³ç";
+    wchar_t wResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
+    pThis->_WriteLog(CString(L"CALL ME -> OTHER : ") + wRequest);
+    pThis->m_pFunc_EASYZMQ_REQUEST(wRequest, wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 3000);
+    pThis->_WriteLog(CString(L"CALL ME <- OTHER : ") + wResponse);
 }
-
 
 void MainWnd::_OnClickBtn_EASYZMQ_INIT(MainWnd* pThis)
 {
-    pThis->m_pFunc_EASYZMQ_INIT(1000, 1001, _EASYZMQ_OnPush);
-
-    //char szContent[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    //pThis->_ReadFile(L"initRequest.json", szContent, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL);
-    //pThis->_WriteLog(CStringA("REQ : ") + szContent);
-    //char szResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    //pThis->m_pFunc_EASYZMQ_REQUEST(szContent, szResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 3000);
-    //pThis->_WriteLog(CStringA("RES : ") + szResponse);
-}
-
-void MainWnd::_OnClickBtn_saleUploadRequest(MainWnd* pThis)
-{
-    pThis->_CallRequestApi(L"saleUploadRequest.json", 3000);
+    auto nResult = pThis->m_pFunc_EASYZMQ_INIT(1000, 1001, _EASYZMQ_OnPush);
+    CString wMsg = L"";
+    wMsg.Format(L"INIT : %s", nResult == 0 ? L"¼º°ø" : L"½ÇÆÐ");
+    pThis->_WriteLog(wMsg);
 }
 
 void MainWnd::_OnClickBtn_Clear(MainWnd* pThis)
