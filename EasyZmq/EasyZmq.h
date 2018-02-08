@@ -16,7 +16,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// 써드파티 클라에서 코코넛 클라의 전문을 콜백 수신받는 함수
+// EasyZmq 콜백수신함수 타입
 ////////////////////////////////////////////////////////////////////////////////
 typedef int(*LP_EASYZMQ_ONPUSH)(
     LPCWSTR wRequest,               // 콜백 수신전문
@@ -26,8 +26,12 @@ typedef int(*LP_EASYZMQ_ONPUSH)(
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// 코코넛 클라와 통신을 하기위한 초기화함수
-// 써드파티 클라에서 통신을 시작하기전 반드시 호출해야 한다.
+// EasyZmq 초기화함수
+//
+// 리턴값 : 
+//      성공 : 0, 양수
+//      실패 : 음수 
+//          에러코드 : https://github.com/zeromq/libzmq/blob/master/builds/msvc/errno.hpp
 ////////////////////////////////////////////////////////////////////////////////
 EASYZMQ_API int EASYZMQ_Init(
     int nMyPort,                        // 내 대기 포트
@@ -37,7 +41,12 @@ EASYZMQ_API int EASYZMQ_Init(
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// 써드파티 클라에서 코코넛 클라로 요청하는 함수
+// EasyZmq 요청함수
+//
+// 리턴값 : 
+//      성공 : 0, 양수
+//      실패 : 음수 
+//          에러코드 : https://github.com/zeromq/libzmq/blob/master/builds/msvc/errno.hpp
 ////////////////////////////////////////////////////////////////////////////////
 EASYZMQ_API int EASYZMQ_Request(
     LPCWSTR wRequest,               // 요청전문
@@ -91,4 +100,4 @@ int _RequestResponse(LPCWSTR wRequest, LPWSTR wResponse, int nResponseLength, in
 
 
 
-int _ResetReqSocket();
+int _InitReqSocket();

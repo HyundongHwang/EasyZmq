@@ -135,24 +135,46 @@ LRESULT MainWnd::_On_ID_BTN(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHan
     return 0;
 }
 
-void MainWnd::_OnClickBtn_EASYZMQ_REQUEST_hello(MainWnd* pThis)
+void MainWnd::_OnClickBtn_Clear(MainWnd* pThis)
 {
-    wchar_t* wRequest = L"hello안녕";
-    wchar_t wResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
-    pThis->_WriteLog(CString(L"CALL ME -> OTHER : ") + wRequest);
-    pThis->m_pFunc_EASYZMQ_REQUEST(wRequest, wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 3000);
-    pThis->_WriteLog(CString(L"CALL ME <- OTHER : ") + wResponse);
+    pThis->m_edLog.SetWindowText(L"");
 }
+
+
 
 void MainWnd::_OnClickBtn_EASYZMQ_INIT(MainWnd* pThis)
 {
     auto nResult = pThis->m_pFunc_EASYZMQ_INIT(1000, 1001, _EASYZMQ_OnPush);
     CString wMsg = L"";
-    wMsg.Format(L"INIT : %s", nResult == 0 ? L"성공" : L"실패");
+
+    if (nResult >= 0)
+    {
+        wMsg.Format(L"INIT : 성공");
+    }
+    else
+    {
+        wMsg.Format(L"INIT : 실패 : %d", nResult);
+    }
+
     pThis->_WriteLog(wMsg);
 }
 
-void MainWnd::_OnClickBtn_Clear(MainWnd* pThis)
+void MainWnd::_OnClickBtn_EASYZMQ_REQUEST_hello(MainWnd* pThis)
 {
-    pThis->m_edLog.SetWindowText(L"");
+    wchar_t* wRequest = L"hello안녕";
+    wchar_t wResponse[EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL] = { 0, };
+    pThis->_WriteLog(CString(L"CALL ME -> OTHER : ") + wRequest);
+    auto nResult = pThis->m_pFunc_EASYZMQ_REQUEST(wRequest, wResponse, EASYZMQ_BRIDGE_BUFFER_SIZE_NORMAL, 3000);
+    CString wMsg = L"";
+
+    if (nResult >= 0)
+    {
+        pThis->_WriteLog(CString(L"CALL ME <- OTHER : ") + wResponse);
+    }
+    else
+    {
+        wMsg.Format(L"CALL : 실패 : %d", nResult);
+    }
+
+    pThis->_WriteLog(wMsg);
 }

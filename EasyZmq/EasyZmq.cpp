@@ -26,13 +26,6 @@ static int s_nMyPort = 0;
 
 
 
-static LPCWSTR RESPONSE_FAIL_CONNECTION_TIMEOUT = L"{ \r\n \
-    \"code\": \"FAIL_CONNECTION_TIMEOUT\", \r\n \
-    \"desc\": \"실패 !!! 연결중 타임아웃이 발생하였습니다. !!!\" \r\n \
-}";
-
-
-
 EASYZMQ_API int EASYZMQ_Init(
     int nMyPort,
     int nOtherPort,
@@ -47,66 +40,66 @@ EASYZMQ_API int EASYZMQ_Init(
 
 
 
-    CRegKey rkUninstall;
-    LSTATUS lstResult = rkUninstall.Open(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
+    //CRegKey rkUninstall;
+    //LSTATUS lstResult = rkUninstall.Open(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
 
-    bool bInstVcredist2010 = false;
+    //bool bInstVcredist2010 = false;
 
-    DWORD i = 0;
-    wchar_t wKeyName[1024] = { 0, };
-    DWORD dwLen = 1024;
+    //DWORD i = 0;
+    //wchar_t wKeyName[1024] = { 0, };
+    //DWORD dwLen = 1024;
 
-    while (ERROR_NO_MORE_ITEMS != rkUninstall.EnumKey(i, wKeyName, &dwLen))
-    {
-        CRegKey rkApp;
-        rkApp.Open(rkUninstall.m_hKey, wKeyName);
-        wchar_t wDisplayNameValue[1024] = { 0, };
-        DWORD dwLen2 = 1024;
-        rkApp.QueryStringValue(L"DisplayName", wDisplayNameValue, &dwLen2);
+    //while (ERROR_NO_MORE_ITEMS != rkUninstall.EnumKey(i, wKeyName, &dwLen))
+    //{
+    //    CRegKey rkApp;
+    //    rkApp.Open(rkUninstall.m_hKey, wKeyName);
+    //    wchar_t wDisplayNameValue[1024] = { 0, };
+    //    DWORD dwLen2 = 1024;
+    //    rkApp.QueryStringValue(L"DisplayName", wDisplayNameValue, &dwLen2);
 
-        //wDisplayNameValue: Microsoft Visual C++ 2010  x86 Redistributable - 10.0.30319
-        if (_IsProgramInstalled(wDisplayNameValue, L"2010", L"redistributable"))
-        {
-            bInstVcredist2010 = true;
-        }
-
-
-        if (bInstVcredist2010)
-            break;
-
-        dwLen = 1024;
-        ZeroMemory(wKeyName, 1024);
-        i++;
-    }
-
-    ScaUtil::WriteLog(L"EASYZMQ_Init bInstVcredist2010 : %d \n", bInstVcredist2010);
+    //    //wDisplayNameValue: Microsoft Visual C++ 2010  x86 Redistributable - 10.0.30319
+    //    if (_IsProgramInstalled(wDisplayNameValue, L"2010", L"redistributable"))
+    //    {
+    //        bInstVcredist2010 = true;
+    //    }
 
 
+    //    if (bInstVcredist2010)
+    //        break;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //http://s3.ap-northeast-2.amazonaws.com/coconut-client/vcredist_x86-vs2010.exe
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //    dwLen = 1024;
+    //    ZeroMemory(wKeyName, 1024);
+    //    i++;
+    //}
 
-    if (!bInstVcredist2010)
-    {
-        _DownloadAndExec(L"http://s3.ap-northeast-2.amazonaws.com/coconut-client/vcredist_x86-vs2010.exe", L"vcredist_x86-vs2010.exe", L"/q");
-    }
+    //ScaUtil::WriteLog(L"EASYZMQ_Init bInstVcredist2010 : %d \n", bInstVcredist2010);
+
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////http://s3.ap-northeast-2.amazonaws.com/coconut-client/vcredist_x86-vs2010.exe
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //if (!bInstVcredist2010)
+    //{
+    //    _DownloadAndExec(L"http://s3.ap-northeast-2.amazonaws.com/coconut-client/vcredist_x86-vs2010.exe", L"vcredist_x86-vs2010.exe", L"/q");
+    //}
 
 
 
     ScaUtil::WriteLog(L"EASYZMQ_Init zmq start \n");
-    int nResult = 0;
+    auto nResult = 0;
 
     ScaUtil::WriteLog(L"EASYZMQ_Init s_nOtherPort : %d \n", s_nOtherPort);
     ScaUtil::WriteLog(L"EASYZMQ_Init s_nMyPort : %d \n", s_nMyPort);
 
     s_pFuncOnPush = pFuncOnPush;
     _CloseZmqContextSocketThread();
-    s_pZmqContextReq = zmq_ctx_new();
-    ScaUtil::WriteLog(L"EASYZMQ_Init s_pZmqContextReq : 0x%x \n", s_pZmqContextReq);
+    //s_pZmqContextReq = zmq_ctx_new();
+    //ScaUtil::WriteLog(L"EASYZMQ_Init s_pZmqContextReq : 0x%x \n", s_pZmqContextReq);
 
-    s_pSocketReq = zmq_socket(s_pZmqContextReq, ZMQ_REQ);
-    ScaUtil::WriteLog(L"EASYZMQ_Init s_pSocketReq : 0x%x \n", s_pSocketReq);
+    //s_pSocketReq = zmq_socket(s_pZmqContextReq, ZMQ_REQ);
+    //ScaUtil::WriteLog(L"EASYZMQ_Init s_pSocketReq : 0x%x \n", s_pSocketReq);
 
     s_pZmqContextRep = zmq_ctx_new();
     ScaUtil::WriteLog(L"EASYZMQ_Init s_pZmqContextRep : 0x%x \n", s_pZmqContextRep);
@@ -114,17 +107,26 @@ EASYZMQ_API int EASYZMQ_Init(
     s_pSocketRep = zmq_socket(s_pZmqContextRep, ZMQ_REP);
     ScaUtil::WriteLog(L"EASYZMQ_Init s_pSocketRep : 0x%x \n", s_pSocketRep);
 
-    char szOtherCon[1024] = { 0, };
-    sprintf(szOtherCon, "tcp://127.0.0.1:%d", s_nOtherPort);
-    nResult = zmq_connect(s_pSocketReq, szOtherCon);
+    //char szOtherCon[1024] = { 0, };
+    //sprintf(szOtherCon, "tcp://127.0.0.1:%d", s_nOtherPort);
+    //nResult = zmq_connect(s_pSocketReq, szOtherCon);
 
-    if (nResult < 0)
-    {
-        _CloseZmqContextSocketThread();
-        return nResult;
-    }
+    //if (nResult < 0)
+    //{
+    //    _CloseZmqContextSocketThread();
+    //    return nResult;
+    //}
 
     s_hZmqRepThread = (HANDLE)_beginthreadex(NULL, 0, _ZmqRepThreadFunc, NULL, 0, NULL);
+
+    nResult = _InitReqSocket();
+
+    if (nResult == -1)
+    {
+        auto nErrNo = zmq_errno();
+        return ::abs(nErrNo) * -1;
+    }
+
     ScaUtil::WriteLog(L"EASYZMQ_Init end \n");
     return nResult;
 }
@@ -137,7 +139,7 @@ EASYZMQ_API int EASYZMQ_Request(
     int nResponseLength,
     int nTimeout)
 {
-    int nResult = _EASYZMQ_Request(wRequest, wResponse, nResponseLength, nTimeout);
+    auto nResult = _EASYZMQ_Request(wRequest, wResponse, nResponseLength, nTimeout);
     return nResult;
 }
 
@@ -151,29 +153,31 @@ int _EASYZMQ_Request(
 {
     USES_CONVERSION;
     ScaUtil::WriteLog(L"EASYZMQ_Request start nTimeout : %d \n", nTimeout);
-    int nResult = 0;
-
-
-
+    auto nResult = 0;
     wchar_t wPingRes[1024] = { 0, };
     nResult = _RequestResponse(L"ping", wPingRes, 1024, 3000);
 
+    if (nResult == -1)
+    {
+        auto nErrNo = zmq_errno();
+        return ::abs(nErrNo) * -1;
+    }
+
     if (::lstrcmp(wPingRes, L"pong") != 0)
     {
-        ::lstrcpy(wResponse, RESPONSE_FAIL_CONNECTION_TIMEOUT);
-        nResult = _ResetReqSocket();
-        return nResult;
+        _InitReqSocket();
+        return -1000;
     }
 
 
 
     nResult = _RequestResponse(wRequest, wResponse, nResponseLength, nTimeout);
 
-    if (nResult < 0)
+    if (nResult == -1)
     {
-        ::lstrcpy(wResponse, RESPONSE_FAIL_CONNECTION_TIMEOUT);
-        nResult = _ResetReqSocket();
-        return nResult;
+        auto nErrNo = zmq_errno();
+        _InitReqSocket();
+        return ::abs(nErrNo) * -1;
     }
 
 
@@ -190,7 +194,7 @@ unsigned int WINAPI _ZmqRepThreadFunc(void* pParam)
 
     ScaUtil::WriteLog(L"_ZmqRepThreadFunc start \n");
 
-    int nResult = 0;
+    auto nResult = 0;
     char szMyCon[1024] = { 0, };
     sprintf(szMyCon, "tcp://127.0.0.1:%d", s_nMyPort);
     nResult = zmq_bind(s_pSocketRep, szMyCon);
@@ -229,7 +233,7 @@ void _CloseZmqContextSocketThread()
 {
     ScaUtil::WriteLog(L"_CloseZmqContextSocketThread start \n");
 
-    int nResult = 0;
+    auto nResult = 0;
 
     if (s_hZmqRepThread != NULL)
     {
@@ -268,18 +272,46 @@ void _CloseZmqContextSocketThread()
 
 
 
-int _GetValidByteCountFromCharPtr(char* pSz)
+int _RequestResponse(LPCWSTR wRequest, LPWSTR wResponse, int nResponseLength, int nTimeout)
 {
-    byte* pBuf = (byte*)pSz;
-    int lengthStr = ::strlen(pSz);
+    USES_CONVERSION;
+    auto nResult = 0;
+    auto lengthReq = 0;
+    nResult = zmq_setsockopt(s_pSocketReq, ZMQ_RCVTIMEO, &nTimeout, sizeof(int));
+    lengthReq = (::lstrlen(wRequest) + 1) * sizeof(wchar_t);
 
-    for (int i = 0; i < lengthStr * 3; i++)
+    ScaUtil::WriteLog(L"EASYZMQ_Request ::lstrlen(szRequestHeaderBody) : %d \n", ::lstrlen(wRequest));
+    nResult = zmq_send(s_pSocketReq, wRequest, lengthReq, 0);
+
+    ScaUtil::WriteLog(L"EASYZMQ_Request zmq_send nResult : %d \n", nResult);
+    nResult = zmq_recv(s_pSocketReq, wResponse, nResponseLength, 0);
+
+    if (nResult == -1)
     {
-        if (pBuf[i] == '\0')
-            return i + 1;
+        auto nErrNo = zmq_errno();
     }
 
-    return -1;
+    ScaUtil::WriteLog(L"EASYZMQ_Request ::lstrlen(szResponse) : %d \n", ::lstrlen(wResponse));
+    return nResult;
+}
+
+
+
+int _InitReqSocket()
+{
+    auto nResult = 0;
+
+    if (s_pSocketReq != NULL)
+    {
+        nResult = zmq_close(s_pSocketReq);
+    }
+
+    s_pZmqContextReq = zmq_ctx_new();
+    s_pSocketReq = zmq_socket(s_pZmqContextReq, ZMQ_REQ);
+    char szEasyZmqCon[1024] = { 0, };
+    sprintf(szEasyZmqCon, "tcp://127.0.0.1:%d", s_nOtherPort);
+    nResult = zmq_connect(s_pSocketReq, szEasyZmqCon);
+    return nResult;
 }
 
 
@@ -299,7 +331,7 @@ void _DownloadAndExec(LPCWSTR wUrl, LPCWSTR wFileName, LPCWSTR wOption)
 {
     USES_CONVERSION;
 
-    _DownloadAndExecInfo* pInfo = new _DownloadAndExecInfo;
+    auto pInfo = new _DownloadAndExecInfo;
     pInfo->wUrl = wUrl;
     pInfo->wFileName = wFileName;
     pInfo->wOption = wOption;
@@ -312,7 +344,7 @@ unsigned int WINAPI _DownloadAndExecThreadFunc(void* pParam)
 {
     USES_CONVERSION;
 
-    _DownloadAndExecInfo* pInfo = (_DownloadAndExecInfo*)pParam;
+    auto pInfo = (_DownloadAndExecInfo*)pParam;
 
     wchar_t wTmpFilePath[MAX_PATH] = { 0, };
     ::GetTempPath(MAX_PATH, wTmpFilePath);
@@ -325,53 +357,4 @@ unsigned int WINAPI _DownloadAndExecThreadFunc(void* pParam)
     delete pInfo;
 
     return 0;
-}
-
-
-
-
-
-
-int _RequestResponse(LPCWSTR wRequest, LPWSTR wResponse, int nResponseLength, int nTimeout)
-{
-    USES_CONVERSION;
-
-    int nResult = 0;
-    int lengthReq = 0;
-
-    //zmq 
-    nResult = zmq_setsockopt(s_pSocketReq, ZMQ_RCVTIMEO, &nTimeout, sizeof(int));
-
-    lengthReq = (::lstrlen(wRequest) + 1) * sizeof(wchar_t);
-
-    ScaUtil::WriteLog(L"EASYZMQ_Request ::lstrlen(szRequestHeaderBody) : %d \n", ::lstrlen(wRequest));
-
-    nResult = zmq_send(s_pSocketReq, wRequest, lengthReq, 0);
-    ScaUtil::WriteLog(L"EASYZMQ_Request zmq_send nResult : %d \n", nResult);
-
-    nResult = zmq_recv(s_pSocketReq, wResponse, nResponseLength, 0);
-
-    ScaUtil::WriteLog(L"EASYZMQ_Request ::lstrlen(szResponse) : %d \n", ::lstrlen(wResponse));
-
-    return nResult;
-}
-
-
-
-int _ResetReqSocket()
-{
-    int nResult = 0;
-
-    if (s_pSocketReq != NULL)
-    {
-        nResult = zmq_close(s_pSocketReq);
-        s_pSocketReq = NULL;
-    }
-
-    s_pZmqContextReq = zmq_ctx_new();
-    s_pSocketReq = zmq_socket(s_pZmqContextReq, ZMQ_REQ);
-    char szEasyZmqCon[1024] = { 0, };
-    sprintf(szEasyZmqCon, "tcp://127.0.0.1:%d", s_nOtherPort);
-    int nNewResult = zmq_connect(s_pSocketReq, szEasyZmqCon);
-    return nNewResult;
 }
