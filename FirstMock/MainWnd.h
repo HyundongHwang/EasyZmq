@@ -104,6 +104,8 @@ private:
     static void _OnClickBtn_Clear(MainWnd* pThis);
 
     CWindow m_edLog;
+    CWindow m_edMyPort;
+    CWindow m_edOtherPort;
 
     HMODULE m_hDll;
 

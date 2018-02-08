@@ -43,6 +43,15 @@ LRESULT MainWnd::_On_WM_CREATE(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
     auto y = 0;
     auto w = 500;
     auto h = 30;
+    auto wId = 1000;
+
+    CWindow wndS0;
+    wndS0.Create(L"Static", this->m_hWnd, CRect(0, y, 100, y + h), L"MyPort : ", WS_CHILD | WS_VISIBLE, NULL, wId++);
+    m_edMyPort.Create(L"Edit", this->m_hWnd, CRect(100, y, 200, y + h), L"", WS_CHILD | WS_VISIBLE | WS_BORDER, NULL, wId++);
+    CWindow wndS1;
+    wndS1.Create(L"Static", this->m_hWnd, CRect(200, y, 3000, y + h), L"OtherPort : ", WS_CHILD | WS_VISIBLE, NULL, wId++);
+    m_edOtherPort.Create(L"Edit", this->m_hWnd, CRect(300, y, 400, y + h), L"", WS_CHILD | WS_VISIBLE | WS_BORDER, NULL, wId++);
+    y += h;
 
     m_arrLabelFuncSimple.Add(CSTRING_FUNC_SIMPLE_PAIR(L"EASYZMQ_INIT", MainWnd::_OnClickBtn_EASYZMQ_INIT));
     m_arrLabelFuncSimple.Add(CSTRING_FUNC_SIMPLE_PAIR(L"EASYZMQ_REQUEST hello", MainWnd::_OnClickBtn_EASYZMQ_REQUEST_hello));
@@ -58,7 +67,7 @@ LRESULT MainWnd::_On_WM_CREATE(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
         y += h;
     }
 
-    m_edLog.Create(L"Edit", this->m_hWnd, CRect(0, 0, 0, 0), L"로그", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | ES_MULTILINE | ES_WANTRETURN, NULL, 1001);
+    m_edLog.Create(L"Edit", this->m_hWnd, CRect(0, 0, 0, 0), L"로그", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | ES_MULTILINE | ES_WANTRETURN, NULL, wId++);
     return 0;
 }
 
@@ -144,19 +153,35 @@ void MainWnd::_OnClickBtn_Clear(MainWnd* pThis)
 
 void MainWnd::_OnClickBtn_EASYZMQ_INIT(MainWnd* pThis)
 {
-    auto nResult = pThis->m_pFunc_EASYZMQ_INIT(1000, 1001, _EASYZMQ_OnPush);
-    CString wMsg = L"";
+    auto nResult = 0;
+    wchar_t wTmp[1024] = { 0, };
+    ::GetWindowText(pThis->m_edMyPort, wTmp, 1024);
+    auto nMyPort = ::_wtoi(wTmp);
+    ::GetWindowText(pThis->m_edOtherPort, wTmp, 1024);
+    auto nOtherPort = ::_wtoi(wTmp);
 
-    if (nResult >= 0)
     {
-        wMsg.Format(L"INIT : 성공");
-    }
-    else
-    {
-        wMsg.Format(L"INIT : 실패 : %d", nResult);
+        CString wMsg = L"";
+        wMsg.Format(L"INIT : nMyPort(%d) nOtherPort(%d)", nMyPort, nOtherPort);
+        pThis->_WriteLog(wMsg);
     }
 
-    pThis->_WriteLog(wMsg);
+    nResult = pThis->m_pFunc_EASYZMQ_INIT(nMyPort, nOtherPort, _EASYZMQ_OnPush);
+
+    {
+        CString wMsg = L"";
+
+        if (nResult >= 0)
+        {
+            wMsg.Format(L"INIT : 성공");
+        }
+        else
+        {
+            wMsg.Format(L"INIT : 실패 : %d", nResult);
+        }
+
+        pThis->_WriteLog(wMsg);
+    }
 }
 
 void MainWnd::_OnClickBtn_EASYZMQ_REQUEST_hello(MainWnd* pThis)
